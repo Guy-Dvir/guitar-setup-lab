@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Setup Lab: nut, frets, neck and bridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#e3e8df; --panel:#f1f4ec; --ink:#1b2320; --ink2:#4a5a53; --line:#bac6ba; --grid:#d3dcd2;
+  --board:#33231b; --board-hi:#6a4b3b; --neck:#d6b57c; --neck-dk:#b8955a; --bone:#efe6cf;
+  --body:#b0603b; --body-dk:#7b3a22; --body-hi:#d58a5f; --bridge:#b5842f; --fret:#dfe2e0;
+  --string:#27363d; --brass:#b5842f; --ok:#2a8a58; --edge:#d79a12; --bad:#d6381d; --choke:#7a3fc4;
+  --on-neck:#4b3320; --on-body:#fbeadb;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f1819; --panel:#162224; --ink:#e4ece3; --ink2:#9fb0a8; --line:#2c3d3e; --grid:#1a2a2b;
+    --board:#3b2b22; --board-hi:#8b6b58; --neck:#c9a468; --neck-dk:#9c7b45; --bone:#e8dfc8;
+    --body:#9a4f31; --body-dk:#60301d; --body-hi:#c77c52; --bridge:#d9a441; --fret:#e8ebeb;
+    --string:#f1eee4; --brass:#d9a441; --ok:#46c07f; --edge:#f0b429; --bad:#ff5a3d; --choke:#b08cff;
+    --on-neck:#33220f; --on-body:#fbeadb;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1819; --panel:#162224; --ink:#e4ece3; --ink2:#9fb0a8; --line:#2c3d3e; --grid:#1a2a2b;
+  --board:#3b2b22; --board-hi:#8b6b58; --neck:#c9a468; --neck-dk:#9c7b45; --bone:#e8dfc8;
+  --body:#9a4f31; --body-dk:#60301d; --body-hi:#c77c52; --bridge:#d9a441; --fret:#e8ebeb;
+  --string:#f1eee4; --brass:#d9a441; --ok:#46c07f; --edge:#f0b429; --bad:#ff5a3d; --choke:#b08cff;
+  --on-neck:#33220f; --on-body:#fbeadb;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:400 14px/1.45 'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+h1{font:700 26px/1 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.02em;margin:0}
+.sub{margin:0;color:var(--ink2);font-size:13.5px}
+.lab{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;align-items:start}
+
+/* layout */
+.wrap{max-width:1400px;margin:0 auto;padding:16px 20px 48px}
+header.top{display:flex;gap:4px 18px;align-items:baseline;flex-wrap:wrap;margin-bottom:14px}
+.stagecol{position:sticky;top:12px;align-self:start;z-index:2}
+@media (max-width:980px){.lab{grid-template-columns:1fr;gap:16px}.stagecol{top:0}}
+@media (max-height:680px){.stagecol{position:static}}
+
+/* controls */
+.grp{padding:12px 0;border-top:1px solid var(--line)}
+.grp:first-child{border-top:0;padding-top:0}
+.grp h2,.grp>summary{font:650 15px/1.2 'Bricolage Grotesque',sans-serif;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.grp>summary{cursor:pointer;list-style:none;margin:0}
+.grp>summary::-webkit-details-marker{display:none}
+.grp>summary::after{content:'+';margin-left:auto;font:500 16px 'DM Mono',monospace;color:var(--ink2)}
+.grp[open]>summary::after{content:'\2013'}
+.grp[open]>summary{margin-bottom:10px}
+.inner{padding-top:2px}
+.sw{width:12px;height:12px;border-radius:2px;border:1px solid var(--ink);flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--ink2);background:transparent;border-radius:999px;padding:4px 10px;font-size:12.5px;cursor:pointer}
+.chip:hover{background:var(--panel);border-color:var(--ink)}
+.row{margin-bottom:4px}
+.rowhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.rowhead label{font-weight:550;font-size:13.5px}
+output{font:500 13px 'DM Mono',ui-monospace,monospace;white-space:nowrap}
+.rng{position:relative;height:26px;display:flex;align-items:center}
+.rng .track{position:absolute;left:0;right:0;top:50%;height:4px;margin-top:-2px;background:var(--line);border-radius:2px}
+.rng .band{position:absolute;top:50%;height:12px;margin-top:-6px;border-radius:3px;background:color-mix(in srgb,var(--ok) 30%,transparent)}
+.rng .zero{position:absolute;top:50%;width:2px;height:16px;margin:-8px 0 0 -1px;background:var(--ink2)}
+.rng input{position:relative;width:100%;height:26px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+.rng input::-webkit-slider-runnable-track{height:26px;background:transparent}
+.rng input::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:22px;margin-top:2px;border-radius:3px;background:var(--brass);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--ink)}
+.rng input::-moz-range-track{height:26px;background:transparent}
+.rng input::-moz-range-thumb{width:12px;height:18px;border-radius:3px;background:var(--brass);border:2px solid var(--panel);box-shadow:0 0 0 1px var(--ink)}
+.cap{margin:0 0 8px;color:var(--ink2);font-size:12.5px;min-height:1.4em}
+.tip{margin:6px 0 0;color:var(--ink2);font-size:12.5px}
+.seg{display:flex;border:1px solid var(--ink);border-radius:999px;overflow:hidden;margin-bottom:10px}
+.seg button{flex:1;border:0;background:transparent;padding:6px 8px;font-size:12.5px;cursor:pointer;border-right:1px solid var(--ink)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn{border:1px solid var(--ink);background:transparent;border-radius:999px;padding:7px 15px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--panel)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.primary:hover{opacity:.88}
+.btn.small{padding:4px 12px;font-size:12.5px}
+
+/* stage */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px}
+.stage-bar{display:flex;gap:10px 14px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line)}
+.notepick{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0}
+.notepick label{font-weight:550;white-space:nowrap}
+.notepick .rng{flex:1;min-width:80px}
+.notepick output{min-width:6ch}
+.opts{position:relative}
+.opts>summary{list-style:none;cursor:pointer;padding:7px 4px;color:var(--ink2);font-size:13px}
+.opts>summary::-webkit-details-marker{display:none}
+.opts .menu{position:absolute;right:0;top:calc(100% + 4px);background:var(--panel);border:1px solid var(--ink);border-radius:6px;padding:10px 12px;display:grid;gap:8px;min-width:200px;z-index:5;font-size:13px}
+.opts label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.opts input{accent-color:var(--brass);width:15px;height:15px;margin:0}
+.scroll{overflow-x:auto}
+.scroll svg{display:block;width:100%;min-width:640px;height:auto;touch-action:pan-y}
+.fret{cursor:ns-resize}
+.mk{cursor:pointer}
+.bottom{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;padding:10px 14px 12px;border-top:1px solid var(--line);align-items:start}
+.bottom p{margin:0 0 6px}
+#status{font-size:14px}
+#verdict{color:var(--ink2);font-size:13px}
+#zoom{display:block;width:320px;max-width:100%;height:auto;border:1px solid var(--line);border-radius:4px;background:var(--paper)}
+@media (max-width:760px){.bottom{grid-template-columns:1fr}#zoom{display:none}}
+svg text{font-family:'DM Mono',ui-monospace,monospace}
+.halo{paint-order:stroke;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
+.zhalo{paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round}
+
+/* details */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:14px}
+.tile{background:var(--panel);padding:8px 10px}
+.tile .k{font-size:12px;color:var(--ink2)}
+.tile .v{font:500 17px/1.25 'DM Mono',monospace}
+.tile .v small{font-size:11px;color:var(--ink2)}
+.head{font:600 14.5px/1.35 'Bricolage Grotesque',sans-serif;margin:0 0 8px;display:flex;gap:9px;align-items:flex-start}
+ul.notes{margin:0;padding:0;list-style:none;display:grid;gap:7px;font-size:13.5px}
+ul.notes li{display:flex;gap:10px;align-items:flex-start}
+.dot{flex:none;width:9px;height:9px;margin-top:6px;border-radius:2px}
+.dot.good{background:var(--ok)}.dot.warn{background:var(--edge)}.dot.bad{background:var(--bad)}.dot.info{background:var(--ink2)}.dot.fix{background:var(--brass);border-radius:50%}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Setup Lab</h1>
+    <p class="sub">One string seen from the side, stretched vertically. Change a setting and watch what touches what.</p>
+  </header>
+
+  <div class="lab">
+    <section class="stagecol">
+      <div class="card">
+        <div class="stage-bar">
+          <div class="notepick">
+            <label for="note">Fretted at</label>
+            <div class="rng"><i class="track"></i><input id="note" type="range" min="0" max="22" step="1" value="0"></div>
+            <output id="note-out">Open</output>
+          </div>
+          <button class="btn primary" id="pluck">Pluck</button>
+          <button class="btn" id="sweep">Sweep</button>
+          <details class="opts"><summary>Options</summary>
+            <div class="menu">
+              <label><input type="checkbox" id="band" checked> Show swing band</label>
+              <label><input type="checkbox" id="hide"> Hide string motion</label>
+            </div>
+          </details>
+        </div>
+        <div class="scroll"><svg id="stage" viewBox="0 0 1030 390" role="img" aria-label="Side view of the string, nut, frets, bridge and body"></svg></div>
+        <div class="bottom">
+          <div class="msg" aria-live="polite">
+            <p id="status"></p>
+            <p id="verdict"></p>
+          </div>
+          <svg id="zoom" viewBox="0 0 320 150" role="img" aria-label="Close-up of one fret with the string and its swing"></svg>
+        </div>
+      </div>
+    </section>
+
+    <aside class="controls" id="controls" aria-label="Setup controls"></aside>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+/* ---------- model (millimetres, in the neck's own frame) ---------- */
+const L = 650, NF = 22, JF = 16, FLOOR = 0.10, EDGE = 0.05;
+const fx = n => L * (1 - Math.pow(2, -n / 12));
+const XJ = fx(JF), XEND = fx(NF) + 14, B0 = 0;
+const MUL = { bass: 1.35, mid: 1, treble: 0.7 };
+
+const DEF = { nut: 0.40, relief: 0.22, end: 0, fretH: 1.0, saddle: 4.4, angle: 0 };
+const state = Object.assign({ pluck: 0.6, V: 14, string: 'mid', note: 0, focus: null, band: true, hide: false,
+  off: new Array(NF + 1).fill(0) }, DEF);
+
+function boardY(x, p) {
+  let y = 0;
+  if (x <= XJ) { const u = x / XJ; y -= p.relief * Math.sin(Math.PI * Math.pow(u, 1.16)); }
+  else { const t = (x - XJ) / (XEND - XJ); y += p.end * t * t; }
+  return y;
+}
+const yf = (n, p) => boardY(fx(n), p) + p.fretH + (p.off[n] || 0);
+
+function geometry(p) {
+  const th = p.angle * Math.PI / 180, dx = L - XJ, dy = p.saddle;
+  const S = { x: XJ + dx * Math.cos(th) + dy * Math.sin(th), y: B0 - dx * Math.sin(th) + dy * Math.cos(th) };
+  const N = { x: 0, y: yf(1, p) + p.nut };
+  return { N, S };
+}
+function noteDetail(p, g, k) {
+  const A = k === 0 ? g.N : { x: fx(k), y: yf(k, p) };
+  const S = g.S, len = S.x - A.x;
+  const a0 = p.pluck * MUL[p.string] * len / L;
+  const line = x => A.y + (S.y - A.y) * (x - A.x) / len;
+  const frets = [];
+  for (let n = k + 1; n <= NF; n++) {
+    const x = fx(n); if (x >= S.x - 1) break;
+    const xi = (x - A.x) / len;
+    const clear = line(x) - yf(n, p);
+    const swing = a0 * (Math.sin(Math.PI * xi) + FLOOR);
+    frets.push({ n, x, clear, swing, margin: clear - swing });
+  }
+  let worst = null, choke = false;
+  for (const f of frets) { if (!worst || f.margin < worst.margin) worst = f; if (f.clear <= 0) choke = true; }
+  let st = 'ok';
+  if (choke) st = 'choke'; else if (worst && worst.margin < 0) st = 'buzz'; else if (worst && worst.margin < EDGE) st = 'edge';
+  return { k, A, S, len, a0, line, frets, worst, st };
+}
+function evaluateAll(p, g) { const out = []; for (let k = 0; k <= NF; k++) out.push(noteDetail(p, g, k)); return out; }
+const gap12 = (p, g) => g.N.y + (g.S.y - g.N.y) * fx(12) / g.S.x - yf(12, p);
+function reliefReading(p) {
+  const x1 = fx(1), x15 = fx(15), x7 = fx(7);
+  const l = yf(1, p) + (yf(15, p) - yf(1, p)) * (x7 - x1) / (x15 - x1);
+  return l - yf(7, p);
+}
+const RF = reliefReading({ relief: 1, fretH: 1, end: 0, off: [] });
+function sharpCents(p, g, k) {
+  const N = g.N, S = g.S, F = { x: fx(k), y: yf(k, p) };
+  const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const dl = d(N, F) + d(F, S) - d(N, S);
+  return 1200 * Math.log2(1 + dl / (2 * L * 0.004));
+}
+function params() {
+  return { saddle: state.saddle, nut: state.nut, angle: state.angle, relief: state.relief / RF,
+    fretH: state.fretH, end: state.end, off: state.off, pluck: state.pluck, string: state.string };
+}
+const focusOf = d => d.frets.find(f => f.n === state.focus) || d.worst;
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 2) => (Math.abs(v) < Math.pow(10, -d) / 2 ? 0 : v).toFixed(d);
+const sgn = (v, d = 2) => (v > 0.0049 ? '+' : '') + fmt(v, d);
+const inch = v => (v / 25.4).toFixed(3) + '\u2033';
+const lab = k => k === 0 ? 'open' : String(k);
+function rangeText(a) {
+  if (!a.length) return '';
+  const out = []; let s = a[0], e = a[0];
+  for (let i = 1; i <= a.length; i++) {
+    if (i < a.length && a[i] === e + 1) { e = a[i]; continue; }
+    out.push(s === e ? lab(s) : lab(s) + '\u2013' + e); s = a[i]; e = a[i];
+  }
+  return out.join(', ');
+}
+function glyph(st, cx, cy) {
+  cx = +cx; cy = +cy;
+  if (st === 'ok') return `<circle cx="${cx}" cy="${cy}" r="4.6" style="fill:var(--ok)"/>`;
+  if (st === 'edge') return `<path d="M${cx},${cy - 6} L${cx + 6},${cy + 5} L${cx - 6},${cy + 5} Z" style="fill:var(--edge)"/>`;
+  if (st === 'buzz') return `<circle cx="${cx}" cy="${cy}" r="6.2" style="fill:var(--bad)"/><path d="M${cx - 2.6},${cy - 2.6} L${cx + 2.6},${cy + 2.6} M${cx + 2.6},${cy - 2.6} L${cx - 2.6},${cy + 2.6}" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>`;
+  return `<rect x="${cx - 5}" y="${cy - 5}" width="10" height="10" rx="1.5" style="fill:var(--choke)"/>`;
+}
+
+/* ---------- controls ---------- */
+const PRESETS = [
+  { name: 'Balanced', set: {} },
+  { name: 'Nut cut too low', set: { nut: -0.04 } },
+  { name: 'Nut too high', set: { nut: 1.0 } },
+  { name: 'Back-bowed neck', set: { relief: -0.2 } },
+  { name: 'Too much relief', set: { relief: 0.75 } },
+  { name: 'Saddle too low', set: { saddle: 2.5 } },
+  { name: 'Saddle too high', set: { saddle: 7.5 } },
+  { name: 'Neck tilted back', set: { angle: 0.35 } },
+  { name: 'Ski-jump', set: { end: 1.0, saddle: 3.4 } },
+  { name: 'One high fret', set: { off: { 7: 0.2 } } },
+];
+const GROUPS = [
+  { title: 'Nut', sw: 'var(--bone)', rows: [
+    { key: 'nut', label: 'Slot height over fret 1', min: -0.2, max: 1.2, step: 0.01, typ: [0.25, 0.6], unit: 'mm', dec: 2 }] },
+  { title: 'Neck', sw: 'var(--neck)', rows: [
+    { key: 'relief', label: 'Relief', min: -0.4, max: 0.9, step: 0.01, typ: [0.1, 0.3], zero: 1, unit: 'mm', dec: 2, sign: 1 },
+    { key: 'end', label: 'End of the fretboard', min: -0.6, max: 1.2, step: 0.05, typ: [-0.2, 0.1], zero: 1, unit: 'mm', dec: 2, sign: 1 }] },
+  { title: 'Frets', sw: 'var(--fret)', rows: [
+    { key: 'fretH', label: 'Fret height', min: 0.5, max: 1.6, step: 0.05, typ: [0.8, 1.4], unit: 'mm', dec: 2 }],
+    extra: `<button class="btn small" id="level">Level all frets</button><p class="tip">Drag a fret in the drawing up or down to make it high or low. Click a fret to zoom in on it.</p>` },
+  { title: 'Bridge & body', sw: 'var(--bridge)', rows: [
+    { key: 'saddle', label: 'Saddle height', min: 0, max: 10, step: 0.1, unit: 'mm', dec: 1 },
+    { key: 'angle', label: 'Neck angle', min: -1, max: 1, step: 0.05, zero: 1, unit: '\u00b0', dec: 2, sign: 1 }] },
+  { title: 'Pluck test', sw: 'var(--string)', seg: 1, collapsed: 1, rows: [
+    { key: 'pluck', label: 'Pluck strength', min: 0.2, max: 2, step: 0.05, unit: 'mm', dec: 2, cap: 'How wide the string swings', long: 'Swing at mid-string on an open string. Harder picking swings wider.' },
+    { key: 'V', label: 'Vertical stretch', min: 4, max: 26, step: 1, unit: '', dec: 0, pre: '\u00d7', cap: 'Drawing only, physics unchanged', long: 'Stretches the drawing vertically so tiny gaps are visible. It does not change the physics.' }] },
+];
+function rowHTML(r) {
+  const f = v => (v - r.min) / (r.max - r.min);
+  const pos = fr => `calc(${fr * 100}% + ${((0.5 - fr) * 16).toFixed(2)}px)`;
+  let deco = '';
+  if (r.typ) deco += `<i class="band" style="left:${pos(f(r.typ[0]))};width:calc(${(f(r.typ[1]) - f(r.typ[0])).toFixed(4)} * (100% - 16px))"></i>`;
+  if (r.zero) deco += `<i class="zero" style="left:${pos(f(0))}"></i>`;
+  return `<div class="row" id="r-${r.key}" title="${r.long || ''}"><div class="rowhead"><label for="s-${r.key}">${r.label}</label><output id="o-${r.key}"></output></div>
+  <div class="rng"><i class="track"></i>${deco}<input id="s-${r.key}" data-key="${r.key}" type="range" min="${r.min}" max="${r.max}" step="${r.step}" value="${state[r.key]}"></div>
+  <p class="cap" id="c-${r.key}">${r.cap || ''}</p></div>`;
+}
+function buildControls() {
+  let h = `<div class="grp"><h2>Start from a scenario</h2><div class="chips">${PRESETS.map((p, i) => `<button class="chip" data-preset="${i}">${p.name}</button>`).join('')}</div><p class="tip">Green on a slider marks the usual range.</p></div>`;
+  for (const g of GROUPS) {
+    const title = `<span class="sw" style="background:${g.sw}"></span>${g.title.replace('&', '&amp;')}`;
+    let inner = '';
+    if (g.seg) inner += `<div class="seg" role="group" aria-label="Which string" title="Thick strings swing wider, so they need more room."><button data-str="bass">Low string</button><button data-str="mid">Middle</button><button data-str="treble">High string</button></div>`;
+    for (const r of g.rows) inner += rowHTML(r);
+    if (g.extra) inner += g.extra;
+    h += g.collapsed ? `<details class="grp"><summary>${title}</summary><div class="inner">${inner}</div></details>`
+                     : `<section class="grp"><h2>${title}</h2>${inner}</section>`;
+  }
+  h += `<details class="grp"><summary><span class="sw" style="background:var(--ink2)"></span>Details and fixes</summary><div id="diag" class="inner"></div></details>`;
+  $('#controls').innerHTML = h;
+}
+const ROWS = {}; GROUPS.forEach(g => g.rows.forEach(r => ROWS[r.key] = r));
+
+/* ---------- stage geometry (pixels) ---------- */
+const SX = 1.2, X0 = 80, Y0 = 250, VBW = 1030, VBH = 390;
+const px = x => X0 + x * SX;
+const py = y => Y0 - y * SX * state.V;
+let ctx = null, dynEl = null, zoomEl = null;
+const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function renderStage(c) {
+  const { p, g, det } = c;
+  const th = p.angle * Math.PI / 180, ct = Math.cos(th), st_ = Math.sin(th);
+  const rot = (x, y) => ({ x: XJ + (x - XJ) * ct + (y - B0) * st_, y: B0 - (x - XJ) * st_ + (y - B0) * ct });
+  const P = o => `${px(o.x).toFixed(1)},${py(o.y).toFixed(1)}`;
+  let s = `<defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" style="stroke:var(--grid)" stroke-width="1"/></pattern>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--body)"/><stop offset="1" style="stop-color:var(--body-dk)"/></linearGradient>
+    <linearGradient id="gNeck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--neck)"/><stop offset="1" style="stop-color:var(--neck-dk)"/></linearGradient>
+  </defs><rect width="${VBW}" height="${VBH}" fill="url(#grid)"/>`;
+
+  /* body, tilted with the neck angle */
+  const T0 = rot(XJ - 22, B0), T1 = rot(L + 118, B0), bt = 112;
+  const bx0 = px(T0.x), by0 = py(T0.y), bx1 = px(T1.x), by1 = py(T1.y);
+  s += `<path d="M${bx0},${by0} L${bx1},${by1} L${bx1},${by1 + bt} L${bx0},${by0 + bt} Z" fill="url(#gBody)" style="stroke:var(--ink)" stroke-width="1.4" stroke-linejoin="round"/>
+        <line x1="${bx0}" y1="${by0}" x2="${bx1}" y2="${by1}" style="stroke:var(--body-hi)" stroke-width="3"/>`;
+
+  /* straightedge: the fret plane, extended to the bridge */
+  const planeY = py(p.fretH);
+  s += `<line x1="${px(0)}" y1="${planeY}" x2="${px(L + 44)}" y2="${planeY}" style="stroke:var(--ink2)" stroke-width="1" stroke-dasharray="6 5"/>
+        <text x="${px(L + 48)}" y="${planeY + 4}" font-size="12" style="fill:var(--ink2)">fret plane</text>`;
+
+  /* neck + fretboard following the relief curve */
+  const pts = []; for (let x = 0; x < XEND; x += 4) pts.push([px(x), py(boardY(x, p))]); pts.push([px(XEND), py(boardY(XEND, p))]);
+  const off = d => pts.map(q => q[0].toFixed(1) + ',' + (q[1] + d).toFixed(1));
+  const topPts = pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+  s += `<polygon points="${off(12).join(' ')} ${off(60).reverse().join(' ')}" fill="url(#gNeck)" style="stroke:var(--ink)" stroke-width="1.2" stroke-linejoin="round"/>
+        <polygon points="${topPts} ${off(16).reverse().join(' ')}" style="fill:var(--board);stroke:var(--ink)" stroke-width="1.2" stroke-linejoin="round"/>
+        <polyline points="${topPts}" fill="none" style="stroke:var(--board-hi)" stroke-width="1.6"/>
+        <text x="${px(120)}" y="${Y0 + 44}" font-size="13" style="fill:var(--on-neck)">neck</text>`;
+
+  /* headstock, tuner post, nut */
+  const yn = py(g.N.y);
+  s += `<rect x="${X0 - 74}" y="${Y0 + 2}" width="64" height="58" rx="8" fill="url(#gNeck)" style="stroke:var(--ink)" stroke-width="1.2"/>
+        <rect x="${X0 - 50}" y="${yn + 3}" width="7" height="${Math.max(4, Y0 + 6 - yn - 3)}" rx="2" style="fill:var(--bridge);stroke:var(--ink)" stroke-width=".8"/>
+        <line x1="${X0 - 46}" y1="${yn + 3}" x2="${X0}" y2="${yn}" style="stroke:var(--string)" stroke-width="2"/>
+        <path d="M${X0 - 14},${Y0 + 14} L${X0 - 14},${yn - 10} L${X0 - 5},${yn - 10} L${X0 - 5},${yn} L${X0},${yn} L${X0},${Y0 + 14} Z" style="fill:var(--bone);stroke:var(--ink)" stroke-width="1.2" stroke-linejoin="round"/>
+        <line x1="${X0 - 7}" y1="${yn - 14}" x2="${X0 - 7}" y2="${yn - 40}" style="stroke:var(--ink2)" stroke-width="1"/>
+        <text x="${X0 - 7}" y="${yn - 46}" text-anchor="middle" font-size="13" style="fill:var(--ink)">nut</text>`;
+
+  /* bridge and tail */
+  const hs = p.saddle, b0 = rot(L - 13, B0), b1 = rot(L + 13, B0), t1 = rot(L + 6, hs), t0 = rot(L - 6, hs), ta = rot(L + 64, B0);
+  s += `<line x1="${px(g.S.x)}" y1="${py(g.S.y)}" x2="${px(ta.x)}" y2="${py(ta.y)}" style="stroke:var(--string)" stroke-width="1.6"/>
+        <polygon points="${P(b0)} ${P(b1)} ${P(t1)} ${P(t0)}" style="fill:var(--bridge);stroke:var(--ink)" stroke-width="1.2" stroke-linejoin="round"/>
+        <line x1="${px(t0.x)}" y1="${py(t0.y)}" x2="${px(t1.x)}" y2="${py(t1.y)}" style="stroke:var(--bone);stroke-width:4" stroke-linecap="round"/>
+        <circle cx="${px(ta.x)}" cy="${py(ta.y)}" r="4.5" style="fill:var(--bridge);stroke:var(--ink)" stroke-width="1"/>
+        <line x1="${px(g.S.x)}" y1="${py(g.S.y) - 8}" x2="${px(g.S.x)}" y2="${py(g.S.y) - 36}" style="stroke:var(--ink2)" stroke-width="1"/>
+        <text x="${px(g.S.x)}" y="${py(g.S.y) - 42}" text-anchor="middle" font-size="13" style="fill:var(--ink)">bridge</text>
+        <circle cx="${px(XJ)}" cy="${py(B0)}" r="4" fill="none" style="stroke:var(--on-body)" stroke-width="1.5"/>`;
+  const lx = px(XEND + 12), ly = py(rot(XEND + 12, B0).y);
+  s += `<text x="${lx}" y="${ly + 34}" font-size="14" style="fill:var(--on-body)">body</text>
+        <text x="${lx}" y="${ly + 54}" font-size="12" style="fill:var(--on-body)">neck angle ${sgn(p.angle)}\u00b0</text>`;
+
+  /* frets */
+  for (let n = 1; n <= NF; n++) {
+    const xm = fx(n), cx = px(xm), top = py(yf(n, p)), base = py(boardY(xm, p)) + 2, sel = n === state.note, o = p.off[n] || 0;
+    s += `<g class="fret" data-fret="${n}"><rect x="${cx - 2.8}" y="${top}" width="5.6" height="${Math.max(2, base - top)}" rx="2.4" style="fill:var(--fret);stroke:${sel ? 'var(--brass)' : 'var(--ink)'}" stroke-width="${sel ? 2 : .8}"/>
+      <rect x="${cx - 7}" y="${top - 14}" width="14" height="${Math.max(2, base - top) + 16}" fill="transparent"/></g>`;
+    if (Math.abs(o) > 0.015) s += `<text x="${cx}" y="${top - 18}" text-anchor="middle" font-size="11" class="halo" style="fill:var(--ink)">${sgn(o)}</text>`;
+  }
+
+  /* measurements on the open string */
+  const openY = x => g.N.y + (g.S.y - g.N.y) * x / g.S.x;
+  const x12 = fx(12), y12s = openY(x12), y12f = yf(12, p), c12 = y12s - y12f;
+  s += `<line x1="${px(x12) - 11}" y1="${py(y12s)}" x2="${px(x12) - 11}" y2="${py(y12f)}" style="stroke:var(--ink)" stroke-width="1.2"/>
+        <line x1="${px(x12) - 15}" y1="${py(y12s)}" x2="${px(x12) - 7}" y2="${py(y12s)}" style="stroke:var(--ink)" stroke-width="1.2"/>
+        <text x="${px(x12)}" y="${py(y12s) - 12}" text-anchor="middle" font-size="12" class="halo" style="fill:var(--ink)">12th gap ${fmt(c12)}</text>`;
+  s += `<line x1="${X0 + 9}" y1="${py(g.N.y)}" x2="${X0 + 9}" y2="${py(yf(1, p))}" style="stroke:var(--ink)" stroke-width="1.2"/>
+        <text x="${X0 + 16}" y="${py(g.N.y) - 12}" font-size="12" class="halo" style="fill:var(--ink)">nut ${fmt(p.nut)}</text>`;
+  const bb = rot(L, B0);
+  s += `<line x1="${px(g.S.x) + 22}" y1="${py(bb.y)}" x2="${px(g.S.x) + 22}" y2="${py(g.S.y)}" style="stroke:var(--on-body)" stroke-width="1.2"/>
+        <text x="${px(g.S.x) + 30}" y="${(py(bb.y) + py(g.S.y)) / 2 + 4}" font-size="12" class="halo" style="fill:var(--ink)">saddle ${fmt(p.saddle, 1)}</text>`;
+
+  /* note markers + key */
+  const plateY = Y0 + 76;
+  s += `<rect x="${X0 - 70}" y="${plateY}" width="${VBW - 12 - (X0 - 70)}" height="48" rx="10" style="fill:var(--panel);stroke:var(--line)"/>`;
+  for (let k = 0; k <= NF; k++) {
+    const cx = k === 0 ? X0 - 40 : px(fx(k)), d = det[k];
+    const tip = `${k === 0 ? 'Open string' : 'Fret ' + k}: ${({ ok: 'clear', edge: 'borderline', buzz: 'buzz', choke: 'dead note' })[d.st]}` + (d.st !== 'ok' && d.worst ? `, fret ${d.worst.n}` : '');
+    s += `<g class="mk" data-note="${k}" role="button" tabindex="0" aria-label="${tip}"><title>${tip}</title>
+      <rect x="${cx - 7}" y="${plateY + 4}" width="14" height="40" fill="transparent"/>
+      ${glyph(d.st, cx.toFixed(1), plateY + 17)}
+      ${k === state.note ? `<circle cx="${cx.toFixed(1)}" cy="${plateY + 17}" r="10" fill="none" style="stroke:var(--ink)" stroke-width="1.6"/>` : ''}
+      <text x="${cx.toFixed(1)}" y="${plateY + 40}" text-anchor="middle" font-size="${k === 0 ? 11 : 10}" style="fill:var(--ink2)">${k === 0 ? 'open' : k}</text></g>`;
+  }
+  const lgx = px(XEND) + 24;
+  [['ok', 'clear'], ['edge', 'close'], ['buzz', 'buzz'], ['choke', 'dead']].forEach(([st, t], i) => {
+    s += `${glyph(st, (lgx + i * 78).toFixed(1), plateY + 24)}<text x="${(lgx + i * 78 + 12).toFixed(1)}" y="${plateY + 28}" font-size="11" style="fill:var(--ink2)">${t}</text>`;
+  });
+  s += `<g id="dyn" style="pointer-events:none"></g>`;
+  $('#stage').innerHTML = s;
+  dynEl = $('#dyn'); paint(performance.now());
+}
+
+/* ---------- string layer (animated) ---------- */
+let ANIM = null, HITS = {}, raf = 0, CUR = { dsp: 0, show: false };
+function dynMarkup(now) {
+  if (!ctx) return '';
+  const { p, g, det } = ctx, k = state.note, d = det[k], A = d.A, S = d.S;
+  const X = (x) => px(x).toFixed(1), Yp = (y) => py(y).toFixed(1);
+  let s = '';
+  if (k > 0) {
+    s += `<line x1="${X(g.N.x)}" y1="${Yp(g.N.y)}" x2="${X(S.x)}" y2="${Yp(S.y)}" style="stroke:var(--ink2)" stroke-width="1.2" stroke-dasharray="2 5" opacity=".7"/>
+          <line x1="${X(g.N.x)}" y1="${Yp(g.N.y)}" x2="${X(A.x)}" y2="${Yp(A.y)}" style="stroke:var(--ink2)" stroke-width="1.4" stroke-dasharray="4 3"/>`;
+  }
+  if (state.band && d.frets.length) {
+    const top = [], bot = [], N = 60;
+    for (let i = 0; i <= N; i++) {
+      const xi = i / N, x = A.x + xi * d.len, sw = d.a0 * (Math.sin(Math.PI * xi) + FLOOR), ly = d.line(x);
+      top.push(X(x) + ',' + Yp(ly + sw)); bot.push(X(x) + ',' + Yp(ly - sw));
+    }
+    const bad = d.st === 'buzz' || d.st === 'choke';
+    s += `<polygon points="${top.join(' ')} ${bot.reverse().join(' ')}" style="fill:${bad ? 'var(--bad)' : 'var(--brass)'}" opacity="${bad ? .22 : .26}"/>`;
+  }
+  /* motion */
+  let dsp = 0;
+  if (ANIM) {
+    const t = (now - ANIM.t0) / 1000;
+    if (!RM) dsp = d.a0 * Math.exp(-t / 0.85) * -Math.cos(2 * Math.PI * 5 * t);
+    for (const f of d.frets) {
+      const xi = (f.x - A.x) / d.len;
+      const amp = RM ? d.a0 * (Math.sin(Math.PI * xi) + FLOOR) : dsp * (Math.sin(Math.PI * xi) + FLOOR);
+      const low = RM ? d.line(f.x) - amp : d.line(f.x) + amp;
+      if (low < yf(f.n, p)) HITS[f.n] = now;
+    }
+  }
+  const show = !!(ANIM && !state.hide && !RM);
+  CUR = { dsp, show };
+  const xs = [];
+  for (let i = 0; i <= 56; i++) xs.push({ x: A.x + d.len * i / 56 });
+  d.frets.forEach(f => xs.push({ x: f.x, n: f.n }));
+  xs.sort((a, b) => a.x - b.x);
+  const path = xs.map(q => {
+    const xi = (q.x - A.x) / d.len; let y = d.line(q.x) + (show ? dsp * Math.sin(Math.PI * xi) : 0);
+    if (q.n && y < yf(q.n, p)) y = yf(q.n, p);
+    return X(q.x) + ',' + Yp(y);
+  }).join(' ');
+  s += `<polyline points="${path}" fill="none" style="stroke:var(--string)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const lxm = A.x + 0.3 * d.len;
+  s += `<text x="${X(lxm)}" y="${(py(d.line(lxm)) - 16).toFixed(1)}" text-anchor="middle" font-size="12" class="halo" style="fill:var(--ink)">string</text>`;
+  if (k > 0) s += `<circle cx="${X(A.x)}" cy="${(py(A.y) - 13).toFixed(1)}" r="11" style="fill:var(--brass);stroke:var(--ink)" stroke-width="1.2" opacity=".92"/>`;
+  /* culprit rings */
+  for (const f of d.frets) {
+    const cy = (py(yf(f.n, p)) - 1).toFixed(1);
+    if (f.clear <= 0) s += `<circle cx="${X(f.x)}" cy="${cy}" r="10" fill="none" style="stroke:var(--choke)" stroke-width="2.2"/>`;
+    else if (f.margin < 0) s += `<circle cx="${X(f.x)}" cy="${cy}" r="10" fill="none" style="stroke:var(--bad)" stroke-width="2.2"/>`;
+    else if (d.st === 'edge' && f === d.worst) s += `<circle cx="${X(f.x)}" cy="${cy}" r="10" fill="none" style="stroke:var(--edge)" stroke-width="2" stroke-dasharray="3 3"/>`;
+  }
+  /* which fret the close-up is showing */
+  const ff = focusOf(d);
+  if (ff) s += `<rect x="${(px(ff.x) - 13).toFixed(1)}" y="${(py(yf(ff.n, p)) - 18).toFixed(1)}" width="26" height="40" rx="5" fill="none" style="stroke:var(--ink)" stroke-width="1.2" stroke-dasharray="3 3"/>`;
+  /* contact flashes */
+  for (const n in HITS) {
+    const age = now - HITS[n];
+    if (age < 260) {
+      const f = +n, r = 9 + (age / 260) * 10;
+      s += `<circle cx="${X(fx(f))}" cy="${(py(yf(f, p)) - 1).toFixed(1)}" r="${r.toFixed(1)}" style="fill:var(--bad)" opacity="${(0.55 * (1 - age / 260)).toFixed(2)}"/>`;
+    } else delete HITS[n];
+  }
+  return s;
+}
+
+/* ---------- close-up of one fret ---------- */
+function zoomMarkup(now) {
+  const W = 320, H = 150;
+  if (!ctx) return '';
+  const { p, det } = ctx, d = det[state.note], f = focusOf(d);
+  if (!f) return `<text x="160" y="80" text-anchor="middle" font-size="12" style="fill:var(--ink2)">No frets beyond this note</text>`;
+  const n = f.n, xm = f.x, win = 8, top = yf(n, p), board = boardY(xm, p), rest = d.line(xm), sw = f.swing;
+  let lo = Math.min(top - 0.5, rest - sw - 0.2), hi = Math.max(top, rest + sw) + 0.2;
+  if (hi - lo < 0.9) { const m = (hi + lo) / 2; lo = m - 0.45; hi = m + 0.45; }
+  const bB = H - 22, bT = 28, sy = (bB - bT) / (hi - lo), sx = (W - 20) / (2 * win);
+  const X = x => 10 + (x - (xm - win)) * sx, Y = y => bB - (y - lo) * sy;
+  const flash = HITS[n] && now - HITS[n] < 260;
+  const state_ = f.clear <= 0 ? 'blocked' : f.margin < 0 ? 'buzz' : f.margin < EDGE ? 'close' : 'clear';
+  const col = { blocked: 'var(--choke)', buzz: 'var(--bad)', close: 'var(--edge)', clear: 'var(--ok)' }[state_];
+  let s = '';
+  /* fretboard surface (only if it is in view) */
+  const yb = board > lo ? Math.min(bB, Y(board)) : bB;
+  if (board > lo) s += `<rect x="0" y="${Y(board).toFixed(1)}" width="${W}" height="${(bB - Y(board)).toFixed(1)}" style="fill:var(--board)"/>`;
+  /* swing band */
+  const xa = Math.max(d.A.x, xm - win), xb = Math.min(d.S.x, xm + win);
+  const tp = [], bt = [];
+  for (let i = 0; i <= 24; i++) {
+    const x = xa + (xb - xa) * i / 24, xi = (x - d.A.x) / d.len, w = d.a0 * (Math.sin(Math.PI * xi) + FLOOR), ly = d.line(x);
+    tp.push(X(x).toFixed(1) + ',' + Y(ly + w).toFixed(1)); bt.push(X(x).toFixed(1) + ',' + Y(ly - w).toFixed(1));
+  }
+  const bad = state_ === 'buzz' || state_ === 'blocked';
+  s += `<polygon points="${tp.join(' ')} ${bt.reverse().join(' ')}" style="fill:${bad ? 'var(--bad)' : 'var(--brass)'}" opacity="${bad ? .3 : .3}"/>`;
+  /* fret crown */
+  const w = Math.min(2.4 * sx, 40), x0 = X(xm) - w / 2, yt = Y(top), r = Math.min(w / 2, (yb - yt) / 2);
+  s += `<path d="M${x0},${yb} L${x0},${yt + r} Q${x0},${yt} ${x0 + r},${yt} L${x0 + w - r},${yt} Q${x0 + w},${yt} ${x0 + w},${yt + r} L${x0 + w},${yb} Z" style="fill:${flash ? 'var(--bad)' : 'var(--fret)'};stroke:${bad ? 'var(--bad)' : 'var(--ink)'}" stroke-width="${bad ? 2.4 : 1.2}"/>`;
+  /* the string at rest (thin) and live (thick) */
+  const pts = [], rp = [];
+  for (let i = 0; i <= 40; i++) {
+    const x = xa + (xb - xa) * i / 40, xi = (x - d.A.x) / d.len;
+    let y = d.line(x) + (CUR.show ? CUR.dsp * Math.sin(Math.PI * xi) : 0);
+    if (Math.abs(x - xm) < 1.2 && y < top) y = top;
+    pts.push(X(x).toFixed(1) + ',' + Y(y).toFixed(1)); rp.push(X(x).toFixed(1) + ',' + Y(d.line(x)).toFixed(1));
+  }
+  s += `<polyline points="${rp.join(' ')}" fill="none" style="stroke:var(--ink2)" stroke-width="1" stroke-dasharray="3 3"/>
+        <polyline points="${pts.join(' ')}" fill="none" style="stroke:var(--string)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+  /* labelled measurements */
+  const xg = x0 + w + 16, xs_ = x0 - 16, ty = Y(top), ry = Y(rest);
+  s += `<line x1="${x0 + w}" y1="${ty}" x2="${xg + 4}" y2="${ty}" style="stroke:var(--ink2)" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="${xg}" y1="${ty}" x2="${xg}" y2="${ry}" style="stroke:var(--ink)" stroke-width="1.4"/>
+        <text x="${xg + 6}" y="${((ty + ry) / 2 + 4).toFixed(1)}" font-size="11" class="zhalo" style="fill:var(--ink)">${f.clear <= 0 ? 'blocked' : 'gap ' + fmt(f.clear)}</text>
+        <line x1="${xs_}" y1="${ry}" x2="${xs_}" y2="${Y(rest - sw)}" style="stroke:var(--ink)" stroke-width="1.4"/>
+        <text x="${xs_ - 6}" y="${(Y(rest - sw) + 13).toFixed(1)}" text-anchor="end" font-size="11" class="zhalo" style="fill:var(--ink)">swing ${fmt(sw)}</text>`;
+  s += `<text x="10" y="17" font-size="12" style="fill:var(--ink)">Fret ${n} close-up</text>
+        <text x="${W - 10}" y="17" text-anchor="end" font-size="12" font-weight="600" style="fill:${col}">${state_}</text>
+        <text x="10" y="${H - 6}" font-size="10" style="fill:var(--ink2)">mm, stretched vertically</text>`;
+  return s;
+}
+function paint(now) {
+  if (dynEl) dynEl.innerHTML = dynMarkup(now);
+  if (zoomEl) zoomEl.innerHTML = zoomMarkup(now);
+}
+function loop() {
+  const now = performance.now();
+  if (ANIM && now - ANIM.t0 > ANIM.dur) ANIM = null;
+  paint(now);
+  if (ANIM || Object.keys(HITS).length) raf = requestAnimationFrame(loop); else raf = 0;
+}
+function pluck(dur = 2200) {
+  if (raf) cancelAnimationFrame(raf);
+  ANIM = { t0: performance.now(), dur: RM ? 700 : dur }; HITS = {};
+  loop();
+}
+
+/* ---------- captions, status ---------- */
+function shortFor(key, v, c) {
+  const { p, g } = c;
+  switch (key) {
+    case 'nut': return v < 0 ? 'Below fret 1: string rests on it' : v < 0.15 ? 'Very low: open-string buzz' : v <= 0.6 ? 'Usual range' : v <= 0.9 ? 'High: stiff and sharp near the nut' : 'Very high';
+    case 'relief': return v < -0.03 ? 'Back-bowed' : v <= 0.03 ? 'Straight' : v < 0.1 ? 'Barely bowed' : v <= 0.35 ? 'Slight bow, usual range' : 'Lots of relief';
+    case 'end': return v > 0.15 ? 'Ski-jump: top frets rise' : v < -0.15 ? 'Fall-away: top frets drop' : 'Flat';
+    case 'fretH': return v < 0.7 ? 'Low' : v <= 1.3 ? 'Medium' : 'Tall';
+    case 'saddle': return `Gap at the 12th: ${fmt(gap12(p, g))} mm`;
+    case 'angle': {
+      const sh = (L - XJ) * Math.tan(v * Math.PI / 180);
+      return v > 0.02 ? `Tilted back: string ${fmt(sh, 1)} mm closer at the bridge` : v < -0.02 ? `Tilted forward: ${fmt(-sh, 1)} mm farther at the bridge` : 'Neutral';
+    }
+  }
+  return '';
+}
+const LONG = {
+  nut: 'Height of the string above the top of the 1st fret, measured at the nut. Too low and the open string rattles on the first frets. Too high and low-position notes feel stiff and go sharp.',
+  relief: 'How much the neck bows forward, as a feeler gauge would read it (capo on fret 1, press at fret 15, gap at fret 7). Below zero the neck is back-bowed and humps toward the string.',
+  end: 'Whether the last frets rise toward the string (ski-jump) or drop away from it (fall-away).',
+  fretH: 'Height of the fret wire above the fretboard. Drag individual frets in the drawing to make a high or low fret.',
+  saddle: 'Height of the saddle above the body top. Raising it lifts the string at the bridge end.',
+  angle: 'Tilt of the neck against the body. Tilted back aims the fret plane higher at the bridge, so the string sits closer to the frets. Tilted forward does the opposite.',
+};
+function renderInfo(c) {
+  for (const key in ROWS) {
+    const r = ROWS[key], v = state[key], inp = $('#s-' + key);
+    if (+inp.value !== v) inp.value = v;
+    const num = r.sign ? sgn(v, r.dec) : fmt(v, r.dec);
+    $('#o-' + key).textContent = `${r.pre || ''}${num}${r.unit ? ' ' + r.unit : ''}`;
+    if (!r.cap) { $('#c-' + key).textContent = shortFor(key, v, c); $('#r-' + key).title = LONG[key] || ''; }
+  }
+  document.querySelectorAll('[data-str]').forEach(b => b.setAttribute('aria-pressed', b.dataset.str === state.string));
+  $('#note').value = state.note;
+  $('#note-out').textContent = state.note === 0 ? 'Open' : 'Fret ' + state.note;
+
+  const d = c.det[state.note], w = d.worst, who = state.note === 0 ? 'Open string' : 'Fret ' + state.note;
+  let t;
+  if (!w) t = `<b>${who}:</b> no frets beyond this note.`;
+  else if (d.st === 'ok') t = `<b>${who} rings clear.</b> Tightest spot is fret ${w.n}, with ${fmt(w.margin)} mm to spare.`;
+  else if (d.st === 'edge') t = `<b>${who} is borderline</b> at fret ${w.n}: clears by ${fmt(w.clear)} mm, swings ${fmt(w.swing)} mm.`;
+  else if (d.st === 'buzz') t = `<b>${who} buzzes</b> on fret ${w.n}: clears by ${fmt(w.clear)} mm, swings ${fmt(w.swing)} mm.`;
+  else t = `<b>${who} is dead:</b> the string rests on fret ${d.frets.find(f => f.clear <= 0).n}.`;
+  $('#status').innerHTML = t;
+
+  const dg = c.dg, nb = c.det.filter(x => x.st === 'buzz' || x.st === 'choke').length, ne = c.det.filter(x => x.st === 'edge').length;
+  let v;
+  if (!nb && !ne) v = 'Whole neck: every note rings clear.';
+  else if (!nb) v = `Whole neck: nothing buzzes, ${ne} borderline.`;
+  else v = `Whole neck: ${nb} of ${NF + 1} notes buzz or die.` + (dg.best ? ` Try ${dg.best}.` : '');
+  $('#verdict').textContent = v;
+}
+
+/* ---------- diagnosis (details panel) ---------- */
+function diagnose(c) {
+  const { p, g, det } = c;
+  const isBad = d => d.st === 'buzz' || d.st === 'choke';
+  const bad = det.filter(isBad), edge = det.filter(d => d.st === 'edge'), nBad = bad.length;
+  const items = []; let head, tone, best = '';
+  if (!nBad && !edge.length) { head = 'Every note rings clear at this pluck strength.'; tone = 'good'; }
+  else if (!nBad) { head = `Nothing buzzes, but ${edge.length} note${edge.length > 1 ? 's are' : ' is'} borderline (${rangeText(edge.map(d => d.k))}).`; tone = 'warn'; }
+  else { head = `${nBad} of ${NF + 1} notes buzz or die: ${rangeText(bad.map(d => d.k))}.`; tone = 'bad'; }
+
+  if (nBad) {
+    const cul = {}; bad.forEach(d => { const n = d.worst.n; cul[n] = (cul[n] || 0) + 1; });
+    const list = Object.keys(cul).map(Number).sort((a, b) => a - b);
+    items.push({ t: 'info', x: `Frets the string touches: ${list.join(', ')}.` });
+    if (det[0].st === 'buzz' && det[0].worst.n <= 3) items.push({ t: 'bad', x: `The open string rattles on fret ${det[0].worst.n}. That points at the nut slot sitting too close to the frets.` });
+    const chokes = bad.filter(d => d.st === 'choke');
+    if (chokes.length) items.push({ t: 'bad', x: `Dead notes (${rangeText(chokes.map(d => d.k))}): the string line runs into higher frets, so it has no room to vibrate. The bridge end is too low for this neck.` });
+    const top = list.reduce((a, b) => cul[b] > cul[a] ? b : a, list[0]);
+    if (nBad >= 2 && cul[top] / nBad >= 0.6) {
+      const o = state.off[top];
+      items.push({ t: 'bad', x: o > 0.03 ? `Fret ${top} stands ${fmt(o)} mm proud and causes most of the trouble.` : `Fret ${top} causes most of the trouble.` });
+    }
+    const countBad = q => evaluateAll(q, geometry(q)).filter(isBad).length;
+    const tests = [
+      { x: 'Raising the nut slots by 0.15 mm', f: q => { q.nut += 0.15; } },
+      { x: 'Adding 0.15 mm of relief (easing the truss rod)', f: q => { q.relief += 0.15 / RF; } },
+      { x: 'Raising the saddle by 0.5 mm', f: q => { q.saddle += 0.5; } },
+      { x: 'Levelling the frets', f: q => { q.off = new Array(NF + 1).fill(0); }, ok: state.off.some(v => Math.abs(v) > 0.01) },
+      { x: 'Adding 0.3 mm of fall-away at the top of the neck', f: q => { q.end -= 0.3; }, ok: state.end > 0.1 },
+    ];
+    const res = [];
+    for (const t of tests) {
+      if (t.ok === false) continue;
+      const q = Object.assign({}, p); t.f(q);
+      const n = countBad(q), gain = nBad - n;
+      if (gain > 0) res.push({ x: t.x, gain, n, g12: gap12(q, geometry(q)) });
+    }
+    res.sort((a, b) => b.gain - a.gain);
+    if (res.length) {
+      const r0 = res[0], low = r0.x.charAt(0).toLowerCase() + r0.x.slice(1);
+      best = `${low} (${r0.n === 0 ? 'clears all ' + nBad : 'clears ' + r0.gain + ' of ' + nBad})`;
+      res.slice(0, 3).forEach(r => items.push({ t: 'fix', x: `${r.x} would ${r.n === 0 ? 'clear all of' : 'clear ' + r.gain + ' of'} the ${nBad} bad notes${r.n === 0 ? '' : ' (' + r.n + ' left)'}. The 12th-fret gap would be ${fmt(r.g12)} mm.` }));
+    } else items.push({ t: 'fix', x: 'No single small change fixes this. Try a bigger move, or combine two: for example more relief plus a slightly taller saddle.' });
+  }
+  const c12 = gap12(p, g), r = reliefReading(p);
+  if (p.nut > 0.7) items.push({ t: 'warn', x: `Nut slots are high (${fmt(p.nut)} mm). Low frets feel stiff and fretting pulls fret 1 about ${fmt(sharpCents(p, g, 1), 1)} cents sharp.` });
+  if (c12 > 2.8) items.push({ t: 'warn', x: `High action at the 12th (${fmt(c12)} mm). The bridge end sets this. Lowering the saddle by about ${fmt((c12 - 2.0) * 2, 1)} mm would bring it to 2.0 mm.` });
+  if (c12 < 1.2) items.push({ t: 'warn', x: `Very low action at the 12th (${fmt(c12)} mm). There is little room for the string to swing.` });
+  if (r > 0.45) items.push({ t: 'warn', x: 'A lot of relief. The middle of the neck feels like high action even when the nut and bridge are fine.' });
+  if (r < -0.02) items.push({ t: 'warn', x: 'Back-bow. The middle frets rise into the string, so low and middle notes buzz first.' });
+  if (Math.abs(p.angle) > 0.05) items.push({ t: 'info', x: `Neck angle ${sgn(p.angle)}\u00b0 moves the string ${fmt(Math.abs((L - XJ) * Math.tan(p.angle * Math.PI / 180)), 1)} mm ${p.angle > 0 ? 'toward' : 'away from'} the frets at the bridge. The same effect as ${p.angle > 0 ? 'lowering' : 'raising'} the saddle by that amount.` });
+  if (p.end > 0.3) items.push({ t: 'warn', x: 'Ski-jump: the top frets rise toward the string, so notes above fret 17 choke first.' });
+  return { head, tone, items, best };
+}
+function renderDiag(c) {
+  const { p, g, det, dg } = c;
+  const nb = det.filter(d => d.st === 'buzz' || d.st === 'choke').length;
+  const tile = (k, v, s) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}${s ? ` <small>${s}</small>` : ''}</div></div>`;
+  const c12 = gap12(p, g), r = reliefReading(p);
+  $('#diag').innerHTML = `<div class="tiles">`
+    + tile('Nut height', fmt(p.nut), 'mm')
+    + tile('Gap at the 12th', fmt(c12), 'mm \u00b7 ' + inch(c12))
+    + tile('Relief gauge', fmt(r), 'mm \u00b7 ' + inch(r))
+    + tile('Pulled sharp, fret 1 / 12', `${fmt(sharpCents(p, g, 1), 1)} / ${fmt(sharpCents(p, g, 12), 1)}`, 'cents')
+    + tile('Buzzing notes', `${nb}<small> of ${NF + 1}</small>`, '')
+    + `</div><p class="head"><span class="dot ${dg.tone}" style="margin-top:7px"></span><span>${dg.head}</span></p><ul class="notes">`
+    + dg.items.map(i => `<li><span class="dot ${i.t}"></span><span>${i.x}</span></li>`).join('') + '</ul>';
+}
+
+/* ---------- update loop ---------- */
+function compute() { const p = params(), g = geometry(p); ctx = { p, g, det: evaluateAll(p, g) }; ctx.dg = diagnose(ctx); }
+function update() { compute(); renderStage(ctx); renderInfo(ctx); renderDiag(ctx); }
+
+/* ---------- events ---------- */
+buildControls();
+zoomEl = $('#zoom');
+const controls = $('#controls');
+controls.addEventListener('input', e => {
+  const k = e.target.dataset && e.target.dataset.key; if (!k) return;
+  state[k] = parseFloat(e.target.value); update();
+});
+controls.addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.preset !== undefined) {
+    const pr = PRESETS[+t.dataset.preset];
+    Object.assign(state, DEF); state.off = new Array(NF + 1).fill(0); state.focus = null;
+    const set = Object.assign({}, pr.set); if (set.off) { for (const n in set.off) state.off[n] = set.off[n]; delete set.off; }
+    Object.assign(state, set); update(); pluck(1600);
+  } else if (t.dataset.str) { state.string = t.dataset.str; update(); }
+  else if (t.id === 'level') { state.off = new Array(NF + 1).fill(0); update(); }
+});
+$('#note').addEventListener('input', e => { state.note = +e.target.value; update(); });
+$('#band').addEventListener('change', e => { state.band = e.target.checked; update(); });
+$('#hide').addEventListener('change', e => { state.hide = e.target.checked; });
+document.addEventListener('click', e => { const o = $('.opts'); if (o.open && !o.contains(e.target)) o.open = false; });
+$('#pluck').addEventListener('click', () => pluck());
+let sweepT = null;
+function stopSweep() { clearTimeout(sweepT); sweepT = null; $('#sweep').textContent = 'Sweep'; }
+$('#sweep').addEventListener('click', () => {
+  if (sweepT) { stopSweep(); return; }
+  let k = 0; $('#sweep').textContent = 'Stop';
+  const step = () => {
+    state.note = k; update(); pluck(900); k++;
+    if (k > NF) { sweepT = setTimeout(stopSweep, 950); return; }
+    sweepT = setTimeout(step, 700);
+  };
+  step();
+});
+
+const stage = $('#stage');
+function selectNote(k) { if (sweepT) stopSweep(); state.note = k; update(); }
+stage.addEventListener('click', e => { const m = e.target.closest('[data-note]'); if (m) selectNote(+m.dataset.note); });
+stage.addEventListener('keydown', e => {
+  const m = e.target.closest && e.target.closest('[data-note]');
+  if (m && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectNote(+m.dataset.note); }
+});
+/* drag a fret to raise or lower it; a plain click zooms in on it; two quick clicks reset it */
+let drag = null, lastTap = { n: 0, t: 0 };
+stage.addEventListener('pointerdown', e => {
+  const f = e.target.closest('[data-fret]'); if (!f) return;
+  const n = +f.dataset.fret;
+  drag = { n, y0: e.clientY, o0: state.off[n] || 0, moved: false };
+  try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+});
+stage.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.moved && Math.abs(e.clientY - drag.y0) < 4) return;
+  drag.moved = true;
+  const scale = stage.getBoundingClientRect().width / VBW;
+  const mm = -((e.clientY - drag.y0) / scale) / (SX * state.V);
+  state.off[drag.n] = Math.max(-0.45, Math.min(0.6, Math.round((drag.o0 + mm) * 100) / 100));
+  state.focus = drag.n;
+  update();
+});
+stage.addEventListener('pointerup', () => {
+  if (drag && !drag.moved) {
+    const now = Date.now();
+    if (lastTap.n === drag.n && now - lastTap.t < 380) { state.off[drag.n] = 0; lastTap = { n: 0, t: 0 }; }
+    else lastTap = { n: drag.n, t: now };
+    state.focus = drag.n; update();
+  }
+  drag = null;
+});
+stage.addEventListener('pointercancel', () => { drag = null; });
+
+update();
+})();
+</script>
+</body>
+</html>

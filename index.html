@@ -50,7 +50,6 @@ h1{font:700 26px/1 'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.0
 header.top{display:flex;gap:4px 18px;align-items:baseline;flex-wrap:wrap;margin-bottom:14px}
 .stagecol{position:sticky;top:12px;align-self:start;z-index:2}
 @media (max-width:980px){.lab{grid-template-columns:1fr;gap:16px}.stagecol{top:0}}
-@media (max-height:680px){.stagecol{position:static}}
 
 /* controls */
 .grp{padding:12px 0;border-top:1px solid var(--line)}
@@ -113,7 +112,7 @@ output{font:500 13px 'DM Mono',ui-monospace,monospace;white-space:nowrap}
 #status{font-size:14px}
 #verdict{color:var(--ink2);font-size:13px}
 #zoom{display:block;width:320px;max-width:100%;height:auto;border:1px solid var(--line);border-radius:4px;background:var(--paper)}
-@media (max-width:760px){.bottom{grid-template-columns:1fr}#zoom{display:none}}
+@media (max-width:760px){.bottom{grid-template-columns:1fr}}
 svg text{font-family:'DM Mono',ui-monospace,monospace}
 .halo{paint-order:stroke;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
 .zhalo{paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round}
@@ -130,6 +129,52 @@ ul.notes li{display:flex;gap:10px;align-items:flex-start}
 .dot{flex:none;width:9px;height:9px;margin-top:6px;border-radius:2px}
 .dot.good{background:var(--ok)}.dot.warn{background:var(--edge)}.dot.bad{background:var(--bad)}.dot.info{background:var(--ink2)}.dot.fix{background:var(--brass);border-radius:50%}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+html{-webkit-text-size-adjust:100%}
+.stepbtn{flex:none;width:30px;height:30px;border:1px solid var(--ink2);border-radius:50%;background:transparent;font-size:17px;line-height:1;cursor:pointer;padding:0;display:grid;place-items:center}
+.stepbtn:hover{background:var(--panel)}
+.opts .sm{display:none}
+#sweep2{display:none}
+details.more{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+details.more>summary{cursor:pointer;color:var(--ink2);font-size:13px}
+details.more[open]>summary{margin-bottom:8px}
+#zoomSlot{display:none}
+.compact #zoomSlot{display:block;margin-bottom:14px}
+.compact .bottom{grid-template-columns:1fr}
+@media (max-width:760px){
+  .wrap{padding:8px 10px 40px}
+  header.top{margin-bottom:8px}
+  h1{font-size:21px}
+  header .sub{display:none}
+  .lab{gap:12px}
+  .stagecol{top:0;margin:0 -10px}
+  .stagecol .card{border-radius:0;border-left:0;border-right:0;box-shadow:0 6px 16px rgba(0,0,0,.16)}
+  .stage-bar{flex-wrap:nowrap;padding:8px 10px;gap:6px}
+  .notepick{gap:6px}
+  .notepick label{display:none}
+  .notepick .rng{min-width:60px}
+  .notepick output{min-width:5ch;font-size:12px}
+  #sweep{display:none}
+  #sweep2{display:block}
+  .btn{padding:7px 14px}
+  .opts>summary{padding:4px 6px}
+  .opts .lg{display:none}
+  .opts .sm{display:inline;font-size:22px;line-height:1}
+  .scroll{overflow:visible}
+  .scroll svg{min-width:0}
+  #stage text{font-size:22px}
+  #stage .mnum{font-size:19px}
+  #stage .minor{display:none}
+  .bottom{padding:8px 10px 10px;gap:0}
+  #status{font-size:13px;margin:0 0 2px}
+  #verdict{font-size:12px;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .chip{padding:6px 11px}
+  .rng{height:34px}
+  .rng input{height:34px}
+  .rng input::-webkit-slider-runnable-track{height:34px}
+  .rng input::-webkit-slider-thumb{width:20px;height:28px;margin-top:3px}
+  .seg button{padding:9px 6px}
+}
 </style>
 </head>
 <body>
@@ -145,13 +190,16 @@ ul.notes li{display:flex;gap:10px;align-items:flex-start}
         <div class="stage-bar">
           <div class="notepick">
             <label for="note">Fretted at</label>
+            <button class="stepbtn" id="prev" aria-label="Previous note">‹</button>
             <div class="rng"><i class="track"></i><input id="note" type="range" min="0" max="22" step="1" value="0"></div>
+            <button class="stepbtn" id="next" aria-label="Next note">›</button>
             <output id="note-out">Open</output>
           </div>
           <button class="btn primary" id="pluck">Pluck</button>
           <button class="btn" id="sweep">Sweep</button>
-          <details class="opts"><summary>Options</summary>
+          <details class="opts"><summary aria-label="Options"><span class="lg">Options</span><span class="sm">⋯</span></summary>
             <div class="menu">
+              <button class="btn small" id="sweep2">Sweep all notes</button>
               <label><input type="checkbox" id="band" checked> Show swing band</label>
               <label><input type="checkbox" id="hide"> Hide string motion</label>
             </div>
@@ -236,6 +284,8 @@ function params() {
   return { saddle: state.saddle, nut: state.nut, angle: state.angle, relief: state.relief / RF,
     fretH: state.fretH, end: state.end, off: state.off, pluck: state.pluck, string: state.string };
 }
+const mqMob = window.matchMedia('(max-width:760px)'), mqCompact = window.matchMedia('(max-width:760px), (max-height:680px)');
+let MOB = mqMob.matches;
 const focusOf = d => d.frets.find(f => f.n === state.focus) || d.worst;
 
 /* ---------- helpers ---------- */
@@ -253,12 +303,12 @@ function rangeText(a) {
   }
   return out.join(', ');
 }
-function glyph(st, cx, cy) {
+function glyph(st, cx, cy, gs = 1) {
   cx = +cx; cy = +cy;
-  if (st === 'ok') return `<circle cx="${cx}" cy="${cy}" r="4.6" style="fill:var(--ok)"/>`;
-  if (st === 'edge') return `<path d="M${cx},${cy - 6} L${cx + 6},${cy + 5} L${cx - 6},${cy + 5} Z" style="fill:var(--edge)"/>`;
-  if (st === 'buzz') return `<circle cx="${cx}" cy="${cy}" r="6.2" style="fill:var(--bad)"/><path d="M${cx - 2.6},${cy - 2.6} L${cx + 2.6},${cy + 2.6} M${cx + 2.6},${cy - 2.6} L${cx - 2.6},${cy + 2.6}" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>`;
-  return `<rect x="${cx - 5}" y="${cy - 5}" width="10" height="10" rx="1.5" style="fill:var(--choke)"/>`;
+  if (st === 'ok') return `<circle cx="${cx}" cy="${cy}" r="${4.6 * gs}" style="fill:var(--ok)"/>`;
+  if (st === 'edge') return `<path d="M${cx},${cy - 6 * gs} L${cx + 6 * gs},${cy + 5 * gs} L${cx - 6 * gs},${cy + 5 * gs} Z" style="fill:var(--edge)"/>`;
+  if (st === 'buzz') return `<circle cx="${cx}" cy="${cy}" r="${6.2 * gs}" style="fill:var(--bad)"/><path d="M${cx - 2.6 * gs},${cy - 2.6 * gs} L${cx + 2.6 * gs},${cy + 2.6 * gs} M${cx + 2.6 * gs},${cy - 2.6 * gs} L${cx - 2.6 * gs},${cy + 2.6 * gs}" stroke="#fff" stroke-width="${1.8 * gs}" stroke-linecap="round"/>`;
+  return `<rect x="${cx - 5 * gs}" y="${cy - 5 * gs}" width="${10 * gs}" height="${10 * gs}" rx="1.5" style="fill:var(--choke)"/>`;
 }
 
 /* ---------- controls ---------- */
@@ -282,7 +332,11 @@ const GROUPS = [
     { key: 'end', label: 'End of the fretboard', min: -0.6, max: 1.2, step: 0.05, typ: [-0.2, 0.1], zero: 1, unit: 'mm', dec: 2, sign: 1 }] },
   { title: 'Frets', sw: 'var(--fret)', rows: [
     { key: 'fretH', label: 'Fret height', min: 0.5, max: 1.6, step: 0.05, typ: [0.8, 1.4], unit: 'mm', dec: 2 }],
-    extra: `<button class="btn small" id="level">Level all frets</button><p class="tip">Drag a fret in the drawing up or down to make it high or low. Click a fret to zoom in on it.</p>` },
+    extra: `<details class="more"><summary>Adjust a single fret</summary>
+      <div class="row"><div class="rowhead"><label for="fsel">Fret</label><output id="o-fsel"></output></div><div class="rng"><i class="track"></i><input id="fsel" type="range" min="1" max="22" step="1" value="7"></div></div>
+      <div class="row"><div class="rowhead"><label for="foff">Height change</label><output id="o-foff"></output></div><div class="rng"><i class="track"></i><i class="zero" style="left:calc(42.86% + 1.14px)"></i><input id="foff" type="range" min="-0.45" max="0.6" step="0.01" value="0"></div></div>
+      <button class="btn small" id="level">Level all frets</button>
+      <p class="tip">On a computer you can also drag a fret in the drawing.</p></details>` },
   { title: 'Bridge & body', sw: 'var(--bridge)', rows: [
     { key: 'saddle', label: 'Saddle height', min: 0, max: 10, step: 0.1, unit: 'mm', dec: 1 },
     { key: 'angle', label: 'Neck angle', min: -1, max: 1, step: 0.05, zero: 1, unit: '\u00b0', dec: 2, sign: 1 }] },
@@ -312,7 +366,7 @@ function buildControls() {
                      : `<section class="grp"><h2>${title}</h2>${inner}</section>`;
   }
   h += `<details class="grp"><summary><span class="sw" style="background:var(--ink2)"></span>Details and fixes</summary><div id="diag" class="inner"></div></details>`;
-  $('#controls').innerHTML = h;
+  $('#controls').innerHTML = '<div id="zoomSlot"></div>' + h;
 }
 const ROWS = {}; GROUPS.forEach(g => g.rows.forEach(r => ROWS[r.key] = r));
 
@@ -343,7 +397,7 @@ function renderStage(c) {
   /* straightedge: the fret plane, extended to the bridge */
   const planeY = py(p.fretH);
   s += `<line x1="${px(0)}" y1="${planeY}" x2="${px(L + 44)}" y2="${planeY}" style="stroke:var(--ink2)" stroke-width="1" stroke-dasharray="6 5"/>
-        <text x="${px(L + 48)}" y="${planeY + 4}" font-size="12" style="fill:var(--ink2)">fret plane</text>`;
+        <text x="${px(L + 48)}" y="${planeY + 4}" font-size="12" class="minor" style="fill:var(--ink2)">fret plane</text>`;
 
   /* neck + fretboard following the relief curve */
   const pts = []; for (let x = 0; x < XEND; x += 4) pts.push([px(x), py(boardY(x, p))]); pts.push([px(XEND), py(boardY(XEND, p))]);
@@ -352,7 +406,7 @@ function renderStage(c) {
   s += `<polygon points="${off(12).join(' ')} ${off(60).reverse().join(' ')}" fill="url(#gNeck)" style="stroke:var(--ink)" stroke-width="1.2" stroke-linejoin="round"/>
         <polygon points="${topPts} ${off(16).reverse().join(' ')}" style="fill:var(--board);stroke:var(--ink)" stroke-width="1.2" stroke-linejoin="round"/>
         <polyline points="${topPts}" fill="none" style="stroke:var(--board-hi)" stroke-width="1.6"/>
-        <text x="${px(120)}" y="${Y0 + 44}" font-size="13" style="fill:var(--on-neck)">neck</text>`;
+        <text x="${px(120)}" y="${Y0 + 44}" font-size="13" class="minor" style="fill:var(--on-neck)">neck</text>`;
 
   /* headstock, tuner post, nut */
   const yn = py(g.N.y);
@@ -373,45 +427,49 @@ function renderStage(c) {
         <text x="${px(g.S.x)}" y="${py(g.S.y) - 42}" text-anchor="middle" font-size="13" style="fill:var(--ink)">bridge</text>
         <circle cx="${px(XJ)}" cy="${py(B0)}" r="4" fill="none" style="stroke:var(--on-body)" stroke-width="1.5"/>`;
   const lx = px(XEND + 12), ly = py(rot(XEND + 12, B0).y);
-  s += `<text x="${lx}" y="${ly + 34}" font-size="14" style="fill:var(--on-body)">body</text>
-        <text x="${lx}" y="${ly + 54}" font-size="12" style="fill:var(--on-body)">neck angle ${sgn(p.angle)}\u00b0</text>`;
+  s += `<text x="${lx}" y="${ly + 34}" font-size="14" class="minor" style="fill:var(--on-body)">body</text>
+        <text x="${lx}" y="${ly + 54}" font-size="12" class="minor" style="fill:var(--on-body)">neck angle ${sgn(p.angle)}\u00b0</text>`;
 
   /* frets */
+  const fw = MOB ? 9 : 5.6;
   for (let n = 1; n <= NF; n++) {
     const xm = fx(n), cx = px(xm), top = py(yf(n, p)), base = py(boardY(xm, p)) + 2, sel = n === state.note, o = p.off[n] || 0;
-    s += `<g class="fret" data-fret="${n}"><rect x="${cx - 2.8}" y="${top}" width="5.6" height="${Math.max(2, base - top)}" rx="2.4" style="fill:var(--fret);stroke:${sel ? 'var(--brass)' : 'var(--ink)'}" stroke-width="${sel ? 2 : .8}"/>
-      <rect x="${cx - 7}" y="${top - 14}" width="14" height="${Math.max(2, base - top) + 16}" fill="transparent"/></g>`;
+    s += `<g class="fret" data-fret="${n}"><rect x="${cx - fw / 2}" y="${top}" width="${fw}" height="${Math.max(2, base - top)}" rx="${fw * 0.43}" style="fill:var(--fret);stroke:${sel ? 'var(--brass)' : 'var(--ink)'}" stroke-width="${sel ? 2 : .8}"/>
+      <rect x="${cx - (MOB ? 12 : 7)}" y="${top - 14}" width="${MOB ? 24 : 14}" height="${Math.max(2, base - top) + 16}" fill="transparent"/></g>`;
     if (Math.abs(o) > 0.015) s += `<text x="${cx}" y="${top - 18}" text-anchor="middle" font-size="11" class="halo" style="fill:var(--ink)">${sgn(o)}</text>`;
   }
 
   /* measurements on the open string */
   const openY = x => g.N.y + (g.S.y - g.N.y) * x / g.S.x;
   const x12 = fx(12), y12s = openY(x12), y12f = yf(12, p), c12 = y12s - y12f;
-  s += `<line x1="${px(x12) - 11}" y1="${py(y12s)}" x2="${px(x12) - 11}" y2="${py(y12f)}" style="stroke:var(--ink)" stroke-width="1.2"/>
+  s += `<g class="minor"><line x1="${px(x12) - 11}" y1="${py(y12s)}" x2="${px(x12) - 11}" y2="${py(y12f)}" style="stroke:var(--ink)" stroke-width="1.2"/>
         <line x1="${px(x12) - 15}" y1="${py(y12s)}" x2="${px(x12) - 7}" y2="${py(y12s)}" style="stroke:var(--ink)" stroke-width="1.2"/>
-        <text x="${px(x12)}" y="${py(y12s) - 12}" text-anchor="middle" font-size="12" class="halo" style="fill:var(--ink)">12th gap ${fmt(c12)}</text>`;
-  s += `<line x1="${X0 + 9}" y1="${py(g.N.y)}" x2="${X0 + 9}" y2="${py(yf(1, p))}" style="stroke:var(--ink)" stroke-width="1.2"/>
+        <text x="${px(x12)}" y="${py(y12s) - 12}" text-anchor="middle" font-size="12" class="halo" style="fill:var(--ink)">12th gap ${fmt(c12)}</text>
+        <line x1="${X0 + 9}" y1="${py(g.N.y)}" x2="${X0 + 9}" y2="${py(yf(1, p))}" style="stroke:var(--ink)" stroke-width="1.2"/>
         <text x="${X0 + 16}" y="${py(g.N.y) - 12}" font-size="12" class="halo" style="fill:var(--ink)">nut ${fmt(p.nut)}</text>`;
   const bb = rot(L, B0);
   s += `<line x1="${px(g.S.x) + 22}" y1="${py(bb.y)}" x2="${px(g.S.x) + 22}" y2="${py(g.S.y)}" style="stroke:var(--on-body)" stroke-width="1.2"/>
-        <text x="${px(g.S.x) + 30}" y="${(py(bb.y) + py(g.S.y)) / 2 + 4}" font-size="12" class="halo" style="fill:var(--ink)">saddle ${fmt(p.saddle, 1)}</text>`;
+        <text x="${px(g.S.x) + 30}" y="${(py(bb.y) + py(g.S.y)) / 2 + 4}" font-size="12" class="halo" style="fill:var(--ink)">saddle ${fmt(p.saddle, 1)}</text></g>`;
 
   /* note markers + key */
-  const plateY = Y0 + 76;
-  s += `<rect x="${X0 - 70}" y="${plateY}" width="${VBW - 12 - (X0 - 70)}" height="48" rx="10" style="fill:var(--panel);stroke:var(--line)"/>`;
+  const GS = MOB ? 1.6 : 1, plateY = Y0 + 76, ph = MOB ? 58 : 48, gy = MOB ? 21 : 17, ty = MOB ? 51 : 40;
+  const showNum = new Set([0, 1, 3, 5, 7, 9, 12, 15, 17, 19, 22]);
+  s += `<rect x="${X0 - 70}" y="${plateY}" width="${VBW - 12 - (X0 - 70)}" height="${ph}" rx="10" style="fill:var(--panel);stroke:var(--line)"/>`;
   for (let k = 0; k <= NF; k++) {
     const cx = k === 0 ? X0 - 40 : px(fx(k)), d = det[k];
     const tip = `${k === 0 ? 'Open string' : 'Fret ' + k}: ${({ ok: 'clear', edge: 'borderline', buzz: 'buzz', choke: 'dead note' })[d.st]}` + (d.st !== 'ok' && d.worst ? `, fret ${d.worst.n}` : '');
     s += `<g class="mk" data-note="${k}" role="button" tabindex="0" aria-label="${tip}"><title>${tip}</title>
-      <rect x="${cx - 7}" y="${plateY + 4}" width="14" height="40" fill="transparent"/>
-      ${glyph(d.st, cx.toFixed(1), plateY + 17)}
-      ${k === state.note ? `<circle cx="${cx.toFixed(1)}" cy="${plateY + 17}" r="10" fill="none" style="stroke:var(--ink)" stroke-width="1.6"/>` : ''}
-      <text x="${cx.toFixed(1)}" y="${plateY + 40}" text-anchor="middle" font-size="${k === 0 ? 11 : 10}" style="fill:var(--ink2)">${k === 0 ? 'open' : k}</text></g>`;
+      <rect x="${cx - 7}" y="${plateY + 4}" width="14" height="${ph - 8}" fill="transparent"/>
+      ${glyph(d.st, cx.toFixed(1), plateY + gy, GS)}
+      ${k === state.note ? `<circle cx="${cx.toFixed(1)}" cy="${plateY + gy}" r="${10 * GS}" fill="none" style="stroke:var(--ink)" stroke-width="${MOB ? 2.4 : 1.6}"/>` : ''}
+      <text x="${cx.toFixed(1)}" y="${plateY + ty}" text-anchor="middle" font-size="${k === 0 ? 11 : 10}" class="mnum${showNum.has(k) ? '' : ' minor'}" style="fill:var(--ink2)">${k === 0 ? 'open' : k}</text></g>`;
   }
   const lgx = px(XEND) + 24;
+  s += '<g class="minor">';
   [['ok', 'clear'], ['edge', 'close'], ['buzz', 'buzz'], ['choke', 'dead']].forEach(([st, t], i) => {
     s += `${glyph(st, (lgx + i * 78).toFixed(1), plateY + 24)}<text x="${(lgx + i * 78 + 12).toFixed(1)}" y="${plateY + 28}" font-size="11" style="fill:var(--ink2)">${t}</text>`;
   });
+  s += '</g>';
   s += `<g id="dyn" style="pointer-events:none"></g>`;
   $('#stage').innerHTML = s;
   dynEl = $('#dyn'); paint(performance.now());
@@ -460,16 +518,16 @@ function dynMarkup(now) {
     if (q.n && y < yf(q.n, p)) y = yf(q.n, p);
     return X(q.x) + ',' + Yp(y);
   }).join(' ');
-  s += `<polyline points="${path}" fill="none" style="stroke:var(--string)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  s += `<polyline points="${path}" fill="none" style="stroke:var(--string)" stroke-width="${MOB ? 3.6 : 2.4}" stroke-linejoin="round" stroke-linecap="round"/>`;
   const lxm = A.x + 0.3 * d.len;
   s += `<text x="${X(lxm)}" y="${(py(d.line(lxm)) - 16).toFixed(1)}" text-anchor="middle" font-size="12" class="halo" style="fill:var(--ink)">string</text>`;
-  if (k > 0) s += `<circle cx="${X(A.x)}" cy="${(py(A.y) - 13).toFixed(1)}" r="11" style="fill:var(--brass);stroke:var(--ink)" stroke-width="1.2" opacity=".92"/>`;
+  if (k > 0) s += `<circle cx="${X(A.x)}" cy="${(py(A.y) - 13).toFixed(1)}" r="${MOB ? 16 : 11}" style="fill:var(--brass);stroke:var(--ink)" stroke-width="1.2" opacity=".92"/>`;
   /* culprit rings */
   for (const f of d.frets) {
     const cy = (py(yf(f.n, p)) - 1).toFixed(1);
-    if (f.clear <= 0) s += `<circle cx="${X(f.x)}" cy="${cy}" r="10" fill="none" style="stroke:var(--choke)" stroke-width="2.2"/>`;
-    else if (f.margin < 0) s += `<circle cx="${X(f.x)}" cy="${cy}" r="10" fill="none" style="stroke:var(--bad)" stroke-width="2.2"/>`;
-    else if (d.st === 'edge' && f === d.worst) s += `<circle cx="${X(f.x)}" cy="${cy}" r="10" fill="none" style="stroke:var(--edge)" stroke-width="2" stroke-dasharray="3 3"/>`;
+    if (f.clear <= 0) s += `<circle cx="${X(f.x)}" cy="${cy}" r="${MOB ? 16 : 10}" fill="none" style="stroke:var(--choke)" stroke-width="2.2"/>`;
+    else if (f.margin < 0) s += `<circle cx="${X(f.x)}" cy="${cy}" r="${MOB ? 16 : 10}" fill="none" style="stroke:var(--bad)" stroke-width="2.2"/>`;
+    else if (d.st === 'edge' && f === d.worst) s += `<circle cx="${X(f.x)}" cy="${cy}" r="${MOB ? 16 : 10}" fill="none" style="stroke:var(--edge)" stroke-width="2" stroke-dasharray="3 3"/>`;
   }
   /* which fret the close-up is showing */
   const ff = focusOf(d);
@@ -585,6 +643,9 @@ function renderInfo(c) {
     $('#o-' + key).textContent = `${r.pre || ''}${num}${r.unit ? ' ' + r.unit : ''}`;
     if (!r.cap) { $('#c-' + key).textContent = shortFor(key, v, c); $('#r-' + key).title = LONG[key] || ''; }
   }
+  { const fo = focusOf(c.det[state.note]), fs = state.focus || (fo ? fo.n : 7), ov = state.off[fs] || 0;
+    $('#fsel').value = fs; $('#o-fsel').textContent = 'Fret ' + fs;
+    $('#foff').value = ov; $('#o-foff').textContent = sgn(ov) + ' mm'; }
   document.querySelectorAll('[data-str]').forEach(b => b.setAttribute('aria-pressed', b.dataset.str === state.string));
   $('#note').value = state.note;
   $('#note-out').textContent = state.note === 0 ? 'Open' : 'Fret ' + state.note;
@@ -684,6 +745,8 @@ buildControls();
 zoomEl = $('#zoom');
 const controls = $('#controls');
 controls.addEventListener('input', e => {
+  if (e.target.id === 'fsel') { state.focus = +e.target.value; update(); return; }
+  if (e.target.id === 'foff') { const n = +$('#fsel').value; state.focus = n; state.off[n] = parseFloat(e.target.value); update(); return; }
   const k = e.target.dataset && e.target.dataset.key; if (!k) return;
   state[k] = parseFloat(e.target.value); update();
 });
@@ -703,17 +766,22 @@ $('#hide').addEventListener('change', e => { state.hide = e.target.checked; });
 document.addEventListener('click', e => { const o = $('.opts'); if (o.open && !o.contains(e.target)) o.open = false; });
 $('#pluck').addEventListener('click', () => pluck());
 let sweepT = null;
-function stopSweep() { clearTimeout(sweepT); sweepT = null; $('#sweep').textContent = 'Sweep'; }
-$('#sweep').addEventListener('click', () => {
+const setSweepText = (a, b) => { $('#sweep').textContent = a; $('#sweep2').textContent = b; };
+function stopSweep() { clearTimeout(sweepT); sweepT = null; setSweepText('Sweep', 'Sweep all notes'); }
+function toggleSweep() {
   if (sweepT) { stopSweep(); return; }
-  let k = 0; $('#sweep').textContent = 'Stop';
+  let k = 0; setSweepText('Stop', 'Stop sweep');
   const step = () => {
     state.note = k; update(); pluck(900); k++;
     if (k > NF) { sweepT = setTimeout(stopSweep, 950); return; }
     sweepT = setTimeout(step, 700);
   };
   step();
-});
+}
+$('#sweep').addEventListener('click', toggleSweep);
+$('#sweep2').addEventListener('click', () => { toggleSweep(); $('.opts').open = false; });
+$('#prev').addEventListener('click', () => { if (sweepT) stopSweep(); state.note = Math.max(0, state.note - 1); update(); });
+$('#next').addEventListener('click', () => { if (sweepT) stopSweep(); state.note = Math.min(NF, state.note + 1); update(); });
 
 const stage = $('#stage');
 function selectNote(k) { if (sweepT) stopSweep(); state.note = k; update(); }
@@ -727,6 +795,7 @@ let drag = null, lastTap = { n: 0, t: 0 };
 stage.addEventListener('pointerdown', e => {
   const f = e.target.closest('[data-fret]'); if (!f) return;
   const n = +f.dataset.fret;
+  if (e.pointerType === 'touch') { state.focus = n; update(); return; }
   drag = { n, y0: e.clientY, o0: state.off[n] || 0, moved: false };
   try { stage.setPointerCapture(e.pointerId); } catch (_) {}
   e.preventDefault();
@@ -752,6 +821,17 @@ stage.addEventListener('pointerup', () => {
 });
 stage.addEventListener('pointercancel', () => { drag = null; });
 
+function applyMode() {
+  MOB = mqMob.matches;
+  document.body.classList.toggle('compact', mqCompact.matches);
+  const z = $('#zoom'), slot = $('#zoomSlot');
+  if (mqCompact.matches) slot.appendChild(z); else $('.bottom').appendChild(z);
+  stage.setAttribute('viewBox', MOB ? '0 56 970 334' : '0 0 1030 390');
+}
+if (MOB) state.V = 20;
+mqMob.addEventListener('change', () => { if (mqMob.matches && state.V === 14) state.V = 20; else if (!mqMob.matches && state.V === 20) state.V = 14; applyMode(); update(); });
+mqCompact.addEventListener('change', () => { applyMode(); update(); });
+applyMode();
 update();
 })();
 </script>
